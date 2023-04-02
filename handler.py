@@ -1,4 +1,6 @@
 from PIL import Image
+from cgi import FieldStorage
+from io import BytesIO
 
 from util import (
     resize, 
@@ -23,19 +25,59 @@ from settings import (
     INPUT_HEIGHT,
     CONF_THRESHOLD
 )
+def parse_into_field_storage(fp, ctype, clength):
+    fs = FieldStorage(
+        fp=fp,
+        environ={'REQUEST_METHOD': 'POST'},
+        headers={
+            'content-type': ctype,
+            'content-length': clength
+        },
+        keep_blank_values=True
+    )
+    form = {}
+    files = {}
+    for f in fs.list:
+        if f.filename:
+            files.setdefault(f.name, []).append(f)
+        else:
+            form.setdefault(f.name, []).append(f.value)
+    return form, files
 
 def main(event, context):
-    image = event['body']['image']
-    # only accept png and jpgs
-    if image.content_type not in ACCEPTED_EXTENSIONS:
+    print(event["body"])
+    body_file = BytesIO(bytes(event["body"], "utf-8"))
+    form, files = parse_into_field_storage(
+        body_file,
+        event['headers']['content_type'],
+        body_file.getbuffer().nbytes
+    )
+    print(files)
+    # image = event['body']['image']
+    # # only accept png and jpgs
+    # if image.content_type not in ACCEPTED_EXTENSIONS:
+    #     return {
+    #         "statusCode": 415,
+    #         "body": {
+    #             'message': 'Unsupported image type'
+    #         }
+    #     }
+    
+
+    try:
+        image = None
+        for v in files.values():
+            if len(v) > 0:
+                image = v[0]
+                break
+        pil_image_raw = Image.open(image)
+    except:
         return {
-            "statusCode": 415,
+            "statusCode": 400,
             "body": {
-                'message': 'Unsupported image type'
+                'message': 'Could not parse image'
             }
         }
-
-    pil_image_raw = Image.open(image)
 
     pil_image, offset, resize_w, resize_h = resize(pil_image_raw, INPUT_WIDTH, INPUT_HEIGHT)
 
