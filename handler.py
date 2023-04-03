@@ -2,6 +2,10 @@ from PIL import Image
 from cgi import FieldStorage
 from io import BytesIO
 
+import logging
+logging.getLogger().setLevel(logging.INFO)
+logger = logging.getLogger()
+
 from util import (
     resize, 
     get_potential,
@@ -45,14 +49,24 @@ def parse_into_field_storage(fp, ctype, clength):
     return form, files
 
 def main(event, context):
-    print(event["body"])
-    body_file = BytesIO(bytes(event["body"], "utf-8"))
-    form, files = parse_into_field_storage(
-        body_file,
-        event['headers']['content_type'],
-        body_file.getbuffer().nbytes
-    )
-    print(files)
+    try:
+        print(event)
+        logger.info(event)
+        logger.info(event["body"])
+        body_file = BytesIO(bytes(event["body"], "utf-8"))
+        form, files = parse_into_field_storage(
+            body_file,
+            event['headers']['content_type'],
+            body_file.getbuffer().nbytes
+        )
+        logger.info(files)
+    except:
+        return {
+            "statusCode": 400,
+            "body": {
+                'message': 'Could not parse image'
+            }
+        }
     # image = event['body']['image']
     # # only accept png and jpgs
     # if image.content_type not in ACCEPTED_EXTENSIONS:
