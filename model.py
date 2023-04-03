@@ -2,7 +2,7 @@ import os
 import torch
 
 path_hubconfig = './yolov5'
-path_weightfile = './weights.pt'
+path_weightfile = './models/weights.pt'
 
 # initialize model into memory
 model = torch.hub.load(

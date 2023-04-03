@@ -29,7 +29,7 @@ class Net(nn.Module):
 
 
 net = Net()
-net.load_state_dict(torch.load('classifier.pth'))
+net.load_state_dict(torch.load('models/classifier.pth'))
 net.eval()
 
 @torch.no_grad()
