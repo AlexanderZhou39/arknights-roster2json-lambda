@@ -49,6 +49,7 @@ def parse_into_field_storage(fp, ctype, clength):
     return form, files
 
 def main(event, context):
+    raise Exception(event)
     try:
         print(event)
         logger.info(event)
