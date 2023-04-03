@@ -2,6 +2,7 @@ from PIL import Image
 from cgi import FieldStorage
 from io import BytesIO
 import base64
+import json
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
@@ -53,64 +54,30 @@ def get_file_from_request_body(headers, body):
     fp = BytesIO(base64.b64decode(body)) # decode
     environ = {"REQUEST_METHOD": "POST"}
     headers = {
-        "content-type": headers["Content-Type"],
-        "content-length": headers["Content-Length"],
+        "content-type": headers["content-type"],
+        "content-length": headers["content-length"],
     }
 
     fs = FieldStorage(fp=fp, environ=environ, headers=headers) 
     return fs
 
 def main(event, context):
-    # raise Exception(event)
-    print(event)
-    logger.info(event)
-    logger.info(event["body"])
-    files = get_file_from_request_body(
-        headers=event["headers"], body=event["body"]
-    )
-    print(files)
-    logger.info(files)
-        # body_file = BytesIO(bytes(event["body"], "utf-8"))
-        # body_file = 
-        # form, files = parse_into_field_storage(
-        #     body_file,
-        #     event['headers']['content_type'],
-        #     body_file.getbuffer().nbytes
-        # )
-        # logger.info(files)
-    # except:
-    #     return {
-    #         "statusCode": 400,
-    #         "body": {
-    #             'message': 'Could not parse image'
-    #         }
-    #     }
-    # image = event['body']['image']
-    # # only accept png and jpgs
-    # if image.content_type not in ACCEPTED_EXTENSIONS:
-    #     return {
-    #         "statusCode": 415,
-    #         "body": {
-    #             'message': 'Unsupported image type'
-    #         }
-    #     }
-    
-
-    # try:
-        # image = None
-        # for v in files.values():
-        #     if len(v) > 0:
-        #         image = v[0]
-        #         break
-    image = files['image']
-    pil_image_raw = Image.open(image)
-    # except:
-    #     return {
-    #         "statusCode": 400,
-    #         "body": {
-    #             'message': 'Could not parse image'
-    #         }
-    #     }
+    try: 
+        files = get_file_from_request_body(
+            headers=event["headers"], body=event["body"]
+        )
+        image = files.getvalue("image")
+        pil_image_raw = Image.open(BytesIO(image))
+    except:
+        return {
+            "cookies" : [],
+            "isBase64Encoded": False,
+            "statusCode": 400,
+            "headers": { "content-type": "application/json" },
+            "body": json.dumps({
+                "message": "Unable to process image"
+            })
+        }
 
     pil_image, offset, resize_w, resize_h = resize(pil_image_raw, INPUT_WIDTH, INPUT_HEIGHT)
 
@@ -210,9 +177,6 @@ def main(event, context):
             operator['level'] = 1
 
     return {
-        'statusCode': 200,
-        'body': {
-            'operators': final_result,
-            'length': len(final_result)
-        }
+        'operators': final_result,
+        'length': len(final_result)
     }
