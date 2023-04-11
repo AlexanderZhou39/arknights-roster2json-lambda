@@ -1,6 +1,7 @@
 from PIL import Image, ImageOps
 from tesseract import tesseract_ocr
-from classifier import classify_potential
+from potclassifier import classify_potential
+from modclassifier import classify_module
 from settings import (
     NAME_MIN_CROP,
     NAME_MAX_PAD,
@@ -86,6 +87,22 @@ def get_potential(df, xmin, xmax, ymin, ymax, img, index):
         cropped.save(f'pots/pot_{index}.jpg')
 
     return classify_potential(cropped)
+
+def get_module(df, xmin, xmax, ymin, ymax, img):
+    module = get_object_or_none(
+        df=df, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax
+    )
+    if module is None:
+        return None
+    
+    cropped = img.crop((
+        module.xmin,
+        module.ymin,
+        module.xmax,
+        module.ymax
+    ))
+
+    return classify_module(cropped)
 
 def get_promotion(df, xmin, xmax, ymin, ymax):
     promotion = get_class_or_none(

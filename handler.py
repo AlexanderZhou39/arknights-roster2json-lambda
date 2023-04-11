@@ -11,10 +11,12 @@ logger = logging.getLogger()
 from util import (
     resize, 
     get_potential,
+    get_module,
     get_promotion,
     get_favorite,
     get_operator_name,
     get_operator_level,
+    get_original_rect,
     name_recognition,
     level_recognition
 )
@@ -26,6 +28,7 @@ from settings import (
     OPERATOR_CLASS,
     FAVORITE_CLASS,
     NAME_CLASS,
+    MOD_CLASS,
     LEVEL_CLASS,
     INPUT_WIDTH,
     INPUT_HEIGHT,
@@ -96,6 +99,7 @@ def main(event, context):
     names = detect_res[detect_res['class'] == NAME_CLASS]
     operators = detect_res[detect_res['class'] == OPERATOR_CLASS]
     favorites = detect_res[detect_res['class'] == FAVORITE_CLASS]
+    modules = detect_res[detect_res['class'] == MOD_CLASS]
 
 
     name_images = []
@@ -115,6 +119,13 @@ def main(event, context):
             img=pil_image,
             xmin=o_xmin, xmax=o_xmax, ymin=o_ymin, ymax=o_ymax,
             index=index
+        )
+
+        # get module info
+        module = get_module(
+            df=modules,
+            img=pil_image,
+            xmin=o_xmin, xmax=o_xmax, ymin=o_ymin, ymax=o_ymax
         )
 
         # get promotion info
@@ -148,10 +159,33 @@ def main(event, context):
         )
         level_images.append(level)
 
+        xyxy = (
+            o_xmin,
+            o_ymin,
+            o_xmax,
+            o_ymax
+        )
+
+        original_coords = get_original_rect(
+            offset=offset, 
+            resize_w=resize_w, 
+            resize_h=resize_h, 
+            xyxy=xyxy,
+            width=pil_image_raw.width,
+            height=pil_image_raw.height
+        )
+
         data = {
             'potential': potential,
             'promotion': promotion,
-            'favorite': favorite
+            'favorite': favorite,
+            'module': module,
+            'xyxy': {
+                'xmin': original_coords[0],
+                'ymin': original_coords[1],
+                'xmax': original_coords[2],
+                'ymax': original_coords[3]
+            }
         }
         final_result.append(data)
 
